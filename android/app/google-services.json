@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "722831611824",
+    "project_id": "ariza-bildirim-mobil",
+    "storage_bucket": "ariza-bildirim-mobil.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:722831611824:android:41fc0b7eb6a469149ea875",
+        "android_client_info": {
+          "package_name": "com.example.ariza_bildirim_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrL9URo-DsByTL6DIm2pN8_dwTclddd2w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
