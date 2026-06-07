@@ -20,8 +20,12 @@ class AuthService {
       }),
     );
 
+    if (response.statusCode == 400 || response.statusCode == 401) {
+      throw Exception('Kullanıcı adı veya şifre hatalı.');
+    }
+
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Login başarısız. Status: ${response.statusCode}');
+      throw Exception('Giriş yapılamadı. Lütfen daha sonra tekrar deneyin.');
     }
 
     final json = jsonDecode(response.body);
