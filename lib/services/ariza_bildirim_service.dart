@@ -54,6 +54,39 @@ class ArizaBildirimService {
     )
         .toList();
   }
+
+  Future<void> markSeen(List<int> ids) async {
+    if (ids.isEmpty) {
+      return;
+    }
+
+    final accessToken = await _tokenStorageService.getAccessToken();
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('Oturum bilgisi bulunamadı. Lütfen tekrar giriş yapın.');
+    }
+
+    final response = await http.post(
+      Uri.parse(ApiConstants.markSeenArizaBildirimUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode({
+        'ids': ids,
+      }),
+    );
+
+    if (response.statusCode == 401) {
+      throw UnauthorizedException();
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Görüldü bilgisi gönderilemedi. Status: ${response.statusCode}',
+      );
+    }
+  }
 }
 
 class UnauthorizedException implements Exception {

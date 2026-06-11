@@ -46,6 +46,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final arizalar =
       await _arizaBildirimService.getActiveArizaBildirimleri();
 
+      try {
+        final ids = arizalar.map((ariza) => ariza.id).toList();
+        await _arizaBildirimService.markSeen(ids);
+      } catch (_) {
+        // Görüldü bilgisi gönderilemese bile liste gösterilmeye devam eder.
+      }
+
       if (!mounted) return;
 
       setState(() {
