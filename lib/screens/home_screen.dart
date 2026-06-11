@@ -93,6 +93,77 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  Future<void> _showResolveConfirmDialog(ArizaBildirimModel ariza) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Arıza çözüldü mü?'),
+          content: Text(
+            '${ariza.arizaCesidiAdi.isEmpty ? 'Bu arıza' : ariza.arizaCesidiAdi} çözüldü olarak işaretlenecek.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: const Text('İptal'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Çözüldü Yap'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    if (confirmed != true) {
+      return;
+    }
+
+    try {
+      await _arizaBildirimService.resolveAriza(ariza.id);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Arıza çözüldü olarak işaretlendi.'),
+        ),
+      );
+
+      await _loadScreenData();
+    } on UnauthorizedException catch (_) {
+      await _tokenStorageService.deleteAccessToken();
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const LoginScreen(
+            initialMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Arıza çözüldü olarak işaretlenemedi.'),
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -178,7 +249,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           const ArizaEmptyState()
         else
           ..._aktifArizalar.map(
-                (ariza) => ArizaCard(ariza: ariza),
+                (ariza) => ArizaCard(
+              ariza: ariza,
+              onResolvePressed: () => _showResolveConfirmDialog(ariza),
+            ),
           ),
       ],
     );

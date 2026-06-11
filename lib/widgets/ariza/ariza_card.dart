@@ -5,10 +5,12 @@ import 'ariza_info_row.dart';
 
 class ArizaCard extends StatelessWidget {
   final ArizaBildirimModel ariza;
+  final VoidCallback? onResolvePressed;
 
   const ArizaCard({
     super.key,
     required this.ariza,
+    this.onResolvePressed,
   });
 
   String _formatDate(DateTime? date) {
@@ -31,6 +33,14 @@ class ArizaCard extends StatelessWidget {
     }
 
     return 'K${konsolNo.toString().padLeft(2, '0')}';
+  }
+
+  String _formatAciklama(String aciklama) {
+    if (aciklama.trim().isEmpty) {
+      return '-';
+    }
+
+    return aciklama.trim();
   }
 
   @override
@@ -64,24 +74,24 @@ class ArizaCard extends StatelessWidget {
               value: ariza.departmanAdi,
             ),
             ArizaInfoRow(
-              icon: Icons.info_outline,
-              label: 'Durum',
-              value: ariza.durumAdi,
+              icon: Icons.description_outlined,
+              label: 'Açıklama',
+              value: _formatAciklama(ariza.aciklama),
             ),
             ArizaInfoRow(
               icon: Icons.access_time,
               label: 'Tarih',
               value: _formatDate(ariza.created),
             ),
-            if (ariza.aciklama.trim().isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                ariza.aciklama,
-                style: TextStyle(
-                  color: Colors.grey.shade800,
-                ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onResolvePressed,
+                icon: const Icon(Icons.check_circle_outline),
+                label: const Text('Çözüldü Yap'),
               ),
-            ],
+            ),
           ],
         ),
       ),
