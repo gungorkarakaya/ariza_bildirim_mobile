@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import '../models/ariza_bildirim_model.dart';
@@ -18,6 +21,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final TokenStorageService _tokenStorageService = TokenStorageService();
   final ArizaBildirimService _arizaBildirimService = ArizaBildirimService();
+
+  StreamSubscription<RemoteMessage>? _messageSubscription;
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -125,10 +130,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
-    if (confirmed != true) {
-      return;
-    }
-
     try {
       await _arizaBildirimService.resolveAriza(ariza.id);
 
@@ -171,10 +172,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
 
     _loadScreenData();
+
+    _messageSubscription = FirebaseMessaging.onMessage.listen((message) {
+      _loadScreenData();
+    });
   }
 
   @override
   void dispose() {
+    _messageSubscription?.cancel();
+
     WidgetsBinding.instance.removeObserver(this);
 
     super.dispose();
