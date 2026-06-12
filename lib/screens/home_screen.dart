@@ -10,6 +10,7 @@ import '../widgets/ariza/ariza_card.dart';
 import '../widgets/ariza/ariza_empty_state.dart';
 import '../widgets/ariza/ariza_error_view.dart';
 import 'login_screen.dart';
+import '../services/local_notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -173,8 +174,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     _loadScreenData();
 
-    _messageSubscription = FirebaseMessaging.onMessage.listen((message) {
-      _loadScreenData();
+    _messageSubscription = FirebaseMessaging.onMessage.listen((message) async {
+      await LocalNotificationService.showForegroundNotification(message);
+
+      if (!mounted) return;
+
+      await _loadScreenData();
     });
   }
 

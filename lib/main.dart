@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'core/network/dev_http_overrides.dart';
 import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
+import 'services/local_notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,8 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await LocalNotificationService.initialize();
 
   runApp(const ArizaBildirimMobileApp());
 }
