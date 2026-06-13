@@ -39,6 +39,7 @@ dependencies:
   http: ^1.6.0
   flutter_secure_storage: ^10.3.1
   flutter_local_notifications: ^22.0.0
+  signalr_netcore: ^1.4.4
 
 dev_dependencies:
   flutter_test:

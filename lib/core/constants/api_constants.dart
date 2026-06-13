@@ -15,4 +15,6 @@ class ApiConstants {
   static String resolveArizaBildirimUrl(int id) =>
       '$baseUrl/api/mobile/ariza-bildirim/$id/resolve';
 
+  static const String arizaHubUrl = '$baseUrl/arizaHub';
+
 }

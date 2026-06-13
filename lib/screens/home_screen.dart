@@ -5,12 +5,13 @@ import 'package:flutter/material.dart';
 
 import '../models/ariza_bildirim_model.dart';
 import '../services/ariza_bildirim_service.dart';
+import '../services/ariza_signalr_service.dart';
+import '../services/local_notification_service.dart';
 import '../services/token_storage_service.dart';
 import '../widgets/ariza/ariza_card.dart';
 import '../widgets/ariza/ariza_empty_state.dart';
 import '../widgets/ariza/ariza_error_view.dart';
 import 'login_screen.dart';
-import '../services/local_notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final TokenStorageService _tokenStorageService = TokenStorageService();
   final ArizaBildirimService _arizaBildirimService = ArizaBildirimService();
+  final ArizaSignalRService _arizaSignalRService = ArizaSignalRService();
 
   StreamSubscription<RemoteMessage>? _messageSubscription;
 
@@ -166,6 +168,37 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _startSignalR() async {
+    try {
+      await _arizaSignalRService.start(
+        onArizaCozuldu: (arizaId) {
+          if (!mounted) return;
+
+          _loadScreenData();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Bir arıza çözüldü. Liste güncellendi.'),
+            ),
+          );
+        },
+        onArizaIptal: (arizaId) {
+          if (!mounted) return;
+
+          _loadScreenData();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Bir arıza iptal edildi. Liste güncellendi.'),
+            ),
+          );
+        },
+      );
+    } catch (_) {
+      // SignalR bağlantısı kurulamazsa uygulama listeleme akışı bozulmasın.
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -173,6 +206,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
 
     _loadScreenData();
+    _startSignalR();
 
     _messageSubscription = FirebaseMessaging.onMessage.listen((message) async {
       await LocalNotificationService.showForegroundNotification(message);
@@ -186,6 +220,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     _messageSubscription?.cancel();
+    _arizaSignalRService.stop();
 
     WidgetsBinding.instance.removeObserver(this);
 
@@ -196,6 +231,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _loadScreenData();
+      _startSignalR();
     }
   }
 
