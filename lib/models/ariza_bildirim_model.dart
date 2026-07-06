@@ -28,9 +28,24 @@ class ArizaBildirimModel {
       durum: json['durum'] ?? 0,
       durumAdi: json['durumAdi'] ?? '',
       arizaCesidiAdi: json['arizaCesidiAdi'] ?? '',
-      created: json['created'] == null
-          ? null
-          : DateTime.tryParse(json['created'].toString()),
+      created: _parseUtcToLocal(json['created']),
     );
+  }
+
+  static DateTime? _parseUtcToLocal(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    final text = value.toString();
+
+    if (text.isEmpty) {
+      return null;
+    }
+
+    final normalizedText =
+    text.endsWith('Z') || text.contains('+') ? text : '${text}Z';
+
+    return DateTime.tryParse(normalizedText)?.toLocal();
   }
 }
