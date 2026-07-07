@@ -44,21 +44,29 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = widget.initialMessage;
     }
 
-    _loadRememberedUsername();
+    _loadRememberedLogin();
   }
 
-  Future<void> _loadRememberedUsername() async {
+  Future<void> _loadRememberedLogin() async {
     final rememberedUsername =
     await _tokenStorageService.getRememberedUsername();
 
+    final rememberedPassword =
+    await _tokenStorageService.getRememberedPassword();
+
     if (!mounted) return;
 
-    if (rememberedUsername != null && rememberedUsername.isNotEmpty) {
-      setState(() {
+    setState(() {
+      if (rememberedUsername != null && rememberedUsername.isNotEmpty) {
         _emailController.text = rememberedUsername;
         _rememberMe = true;
-      });
-    }
+      }
+
+      if (rememberedPassword != null && rememberedPassword.isNotEmpty) {
+        _passwordController.text = rememberedPassword;
+        _rememberMe = true;
+      }
+    });
   }
 
   String _getReadableErrorMessage(Object error) {
@@ -102,8 +110,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (_rememberMe) {
         await _tokenStorageService.saveRememberedUsername(email);
+        await _tokenStorageService.saveRememberedPassword(password);
       } else {
-        await _tokenStorageService.clearRememberedUsername();
+        await _tokenStorageService.clearRememberedLogin();
       }
 
       if (!mounted) return;
@@ -222,7 +231,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           }
                         },
                         suffixIcon: IconButton(
-                          onPressed: () {
+                          onPressed: _isLoading
+                              ? null
+                              : () {
                             setState(() {
                               _obscurePassword = !_obscurePassword;
                             });

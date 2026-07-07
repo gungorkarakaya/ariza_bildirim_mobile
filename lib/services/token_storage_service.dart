@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class TokenStorageService {
   static const String _accessTokenKey = 'access_token';
   static const String _rememberedUsernameKey = 'remembered_username';
+  static const String _rememberedPasswordKey = 'remembered_password';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -42,5 +43,29 @@ class TokenStorageService {
     await _storage.delete(
       key: _rememberedUsernameKey,
     );
+  }
+
+  Future<void> saveRememberedPassword(String password) async {
+    await _storage.write(
+      key: _rememberedPasswordKey,
+      value: password,
+    );
+  }
+
+  Future<String?> getRememberedPassword() async {
+    return await _storage.read(
+      key: _rememberedPasswordKey,
+    );
+  }
+
+  Future<void> clearRememberedPassword() async {
+    await _storage.delete(
+      key: _rememberedPasswordKey,
+    );
+  }
+
+  Future<void> clearRememberedLogin() async {
+    await clearRememberedUsername();
+    await clearRememberedPassword();
   }
 }
