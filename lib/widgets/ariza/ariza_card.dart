@@ -35,12 +35,26 @@ class ArizaCard extends StatelessWidget {
     return 'K${konsolNo.toString().padLeft(2, '0')}';
   }
 
-  String _formatAciklama(String aciklama) {
-    if (aciklama.trim().isEmpty) {
+  String _capitalizeFirstLetter(String value) {
+    final trimmedValue = value.trim();
+
+    if (trimmedValue.isEmpty) {
       return '-';
     }
 
-    return aciklama.trim();
+    return trimmedValue[0].toUpperCase() + trimmedValue.substring(1);
+  }
+
+  String _formatArizaBasligi(String arizaCesidiAdi) {
+    if (arizaCesidiAdi.trim().isEmpty) {
+      return 'Arıza Bildirimi';
+    }
+
+    return _capitalizeFirstLetter(arizaCesidiAdi);
+  }
+
+  String _formatAciklama(String aciklama) {
+    return _capitalizeFirstLetter(aciklama);
   }
 
   @override
@@ -54,9 +68,7 @@ class ArizaCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              ariza.arizaCesidiAdi.isEmpty
-                  ? 'Arıza Bildirimi'
-                  : ariza.arizaCesidiAdi,
+              _formatArizaBasligi(ariza.arizaCesidiAdi),
               style: const TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
@@ -71,7 +83,7 @@ class ArizaCard extends StatelessWidget {
             ArizaInfoRow(
               icon: Icons.apartment_outlined,
               label: 'Departman',
-              value: ariza.departmanAdi,
+              value: _capitalizeFirstLetter(ariza.departmanAdi),
             ),
             ArizaInfoRow(
               icon: Icons.description_outlined,

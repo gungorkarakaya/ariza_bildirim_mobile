@@ -38,13 +38,16 @@ class LocalNotificationService {
   static Future<void> showForegroundNotification(RemoteMessage message) async {
     final notification = message.notification;
 
-    final title =
+    final rawTitle =
         notification?.title ?? message.data['title'] ?? 'Yeni Arıza Bildirimi';
 
-    final body = notification?.body ??
+    final rawBody = notification?.body ??
         message.data['body'] ??
         message.data['message'] ??
         'Yeni bir arıza bildirimi oluşturuldu.';
+
+    final title = _capitalizeNotificationText(rawTitle);
+    final body = _capitalizeNotificationText(rawBody);
 
     const androidDetails = AndroidNotificationDetails(
       'ariza_bildirim_foreground_channel',
@@ -66,5 +69,24 @@ class LocalNotificationService {
       body: body,
       notificationDetails: notificationDetails,
     );
+  }
+
+  static String _capitalizeNotificationText(String value) {
+    final trimmedValue = value.trim();
+
+    if (trimmedValue.isEmpty) {
+      return value;
+    }
+
+    return trimmedValue
+        .split(' ')
+        .map((word) {
+      if (word.isEmpty) {
+        return word;
+      }
+
+      return word[0].toUpperCase() + word.substring(1);
+    })
+        .join(' ');
   }
 }
