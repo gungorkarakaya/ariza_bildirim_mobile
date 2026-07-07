@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="ariza_bildirim_mobile"
+        android:label="Ariza Bildirim"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
