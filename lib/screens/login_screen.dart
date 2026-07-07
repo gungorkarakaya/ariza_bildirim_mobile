@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   bool _obscurePassword = true;
+  bool _rememberMe = false;
 
   @override
   void initState() {
@@ -41,6 +42,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (widget.initialMessage != null && widget.initialMessage!.isNotEmpty) {
       _errorMessage = widget.initialMessage;
+    }
+
+    _loadRememberedUsername();
+  }
+
+  Future<void> _loadRememberedUsername() async {
+    final rememberedUsername =
+    await _tokenStorageService.getRememberedUsername();
+
+    if (!mounted) return;
+
+    if (rememberedUsername != null && rememberedUsername.isNotEmpty) {
+      setState(() {
+        _emailController.text = rememberedUsername;
+        _rememberMe = true;
+      });
     }
   }
 
@@ -83,6 +100,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       await _tokenStorageService.saveAccessToken(accessToken);
 
+      if (_rememberMe) {
+        await _tokenStorageService.saveRememberedUsername(email);
+      } else {
+        await _tokenStorageService.clearRememberedUsername();
+      }
+
       if (!mounted) return;
 
       Navigator.of(context).pushReplacement(
@@ -108,6 +131,47 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Widget _buildRememberMeCheckbox() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: _isLoading
+            ? null
+            : () {
+          setState(() {
+            _rememberMe = !_rememberMe;
+          });
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Checkbox(
+                value: _rememberMe,
+                onChanged: _isLoading
+                    ? null
+                    : (value) {
+                  setState(() {
+                    _rememberMe = value ?? false;
+                  });
+                },
+              ),
+              const Text(
+                'Beni Hatırla',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -171,7 +235,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
+
+                      _buildRememberMeCheckbox(),
+
+                      const SizedBox(height: 8),
 
                       if (_errorMessage != null)
                         LoginErrorBox(
