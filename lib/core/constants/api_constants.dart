@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'https://10.0.2.2:7165';
+  static const String baseUrl = 'http://192.168.2.10';
 
   static const String loginUrl = '$baseUrl/api/auth/createtoken';
 
