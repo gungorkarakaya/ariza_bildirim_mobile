@@ -30,4 +30,27 @@ class DeviceTokenService {
       );
     }
   }
+
+  Future<void> unregisterDeviceToken({
+    required String accessToken,
+    required String fcmToken,
+  }) async {
+    final response = await http.post(
+      Uri.parse(ApiConstants.deviceTokenUnregisterUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode({
+        'token': fcmToken,
+      }),
+    );
+
+    if (response.statusCode != 200 &&
+        response.statusCode != 204) {
+      throw Exception(
+        'Device token pasifleştirme başarısız. Status: ${response.statusCode}',
+      );
+    }
+  }
 }

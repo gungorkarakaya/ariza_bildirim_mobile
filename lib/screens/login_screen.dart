@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
@@ -40,7 +41,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
 
-    if (widget.initialMessage != null && widget.initialMessage!.isNotEmpty) {
+    if (widget.initialMessage != null &&
+        widget.initialMessage!.isNotEmpty) {
       _errorMessage = widget.initialMessage;
     }
 
@@ -49,20 +51,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _loadRememberedLogin() async {
     final rememberedUsername =
-    await _tokenStorageService.getRememberedUsername();
+        await _tokenStorageService.getRememberedUsername();
 
     final rememberedPassword =
-    await _tokenStorageService.getRememberedPassword();
+        await _tokenStorageService.getRememberedPassword();
 
     if (!mounted) return;
 
     setState(() {
-      if (rememberedUsername != null && rememberedUsername.isNotEmpty) {
+      if (rememberedUsername != null &&
+          rememberedUsername.isNotEmpty) {
         _emailController.text = rememberedUsername;
         _rememberMe = true;
       }
 
-      if (rememberedPassword != null && rememberedPassword.isNotEmpty) {
+      if (rememberedPassword != null &&
+          rememberedPassword.isNotEmpty) {
         _passwordController.text = rememberedPassword;
         _rememberMe = true;
       }
@@ -95,6 +99,10 @@ class _LoginScreenState extends State<LoginScreen> {
         password: password,
       );
 
+      // Logout sırasında kapatılan FCM otomatik başlatmayı yeniden aç.
+      await FirebaseMessaging.instance.setAutoInitEnabled(true);
+
+      // Logout sırasında silinen token yerine yeni/geçerli token alınır.
       final fcmToken = await _fcmService.getFcmToken();
 
       if (fcmToken == null || fcmToken.isEmpty) {
@@ -123,6 +131,8 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         _errorMessage = _getReadableErrorMessage(e);
       });
@@ -150,10 +160,10 @@ class _LoginScreenState extends State<LoginScreen> {
         onTap: _isLoading
             ? null
             : () {
-          setState(() {
-            _rememberMe = !_rememberMe;
-          });
-        },
+                setState(() {
+                  _rememberMe = !_rememberMe;
+                });
+              },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
@@ -164,10 +174,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 onChanged: _isLoading
                     ? null
                     : (value) {
-                  setState(() {
-                    _rememberMe = value ?? false;
-                  });
-                },
+                        setState(() {
+                          _rememberMe = value ?? false;
+                        });
+                      },
               ),
               const Text(
                 'Beni Hatırla',
@@ -208,7 +218,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       const LoginHeader(),
                       const SizedBox(height: 26),
-
                       LoginTextField(
                         controller: _emailController,
                         label: 'Email',
@@ -216,9 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                       ),
-
                       const SizedBox(height: 14),
-
                       LoginTextField(
                         controller: _passwordController,
                         label: 'Şifre',
@@ -234,10 +241,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: _isLoading
                               ? null
                               : () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
+                                  setState(() {
+                                    _obscurePassword =
+                                        !_obscurePassword;
+                                  });
+                                },
                           icon: Icon(
                             _obscurePassword
                                 ? Icons.visibility_outlined
@@ -245,25 +253,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 8),
-
                       _buildRememberMeCheckbox(),
-
                       const SizedBox(height: 8),
-
                       if (_errorMessage != null)
                         LoginErrorBox(
                           message: _errorMessage!,
                         ),
-
                       LoginButton(
                         isLoading: _isLoading,
                         onPressed: _login,
                       ),
-
                       const SizedBox(height: 18),
-
                       const Align(
                         alignment: Alignment.centerRight,
                         child: Text(

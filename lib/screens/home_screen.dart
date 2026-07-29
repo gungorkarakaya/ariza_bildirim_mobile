@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../models/ariza_bildirim_model.dart';
 import '../services/ariza_bildirim_service.dart';
 import '../services/ariza_signalr_service.dart';
+import '../services/device_token_service.dart';
 import '../services/local_notification_service.dart';
 import '../services/token_storage_service.dart';
 import '../widgets/ariza/ariza_card.dart';
@@ -20,10 +21,14 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+class _HomeScreenState extends State<HomeScreen>
+    with WidgetsBindingObserver {
   final TokenStorageService _tokenStorageService = TokenStorageService();
-  final ArizaBildirimService _arizaBildirimService = ArizaBildirimService();
-  final ArizaSignalRService _arizaSignalRService = ArizaSignalRService();
+  final ArizaBildirimService _arizaBildirimService =
+      ArizaBildirimService();
+  final ArizaSignalRService _arizaSignalRService =
+      ArizaSignalRService();
+  final DeviceTokenService _deviceTokenService = DeviceTokenService();
 
   StreamSubscription<RemoteMessage>? _messageSubscription;
 
@@ -52,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
 
       final arizalar =
-      await _arizaBildirimService.getActiveArizaBildirimleri();
+          await _arizaBildirimService.getActiveArizaBildirimleri();
 
       try {
         final ids = arizalar.map((ariza) => ariza.id).toList();
@@ -75,7 +80,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const LoginScreen(
-            initialMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+            initialMessage:
+                'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
           ),
         ),
       );
@@ -90,6 +96,36 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _logout() async {
+    final accessToken = await _tokenStorageService.getAccessToken();
+    final fcmToken = await FirebaseMessaging.instance.getToken();
+
+    // Sunucuya erişilebiliyorsa DB kaydını pasifleştir.
+    if (accessToken != null &&
+        accessToken.isNotEmpty &&
+        fcmToken != null &&
+        fcmToken.isNotEmpty) {
+      try {
+        await _deviceTokenService.unregisterDeviceToken(
+          accessToken: accessToken,
+          fcmToken: fcmToken,
+        );
+      } catch (_) {
+        // Kurum dışındayken backend'e ulaşılamayabilir.
+      }
+    }
+
+    // Logout sonrasında yeni FCM token üretilmesini engelle.
+    try {
+      await FirebaseMessaging.instance.setAutoInitEnabled(false);
+      await FirebaseMessaging.instance.deleteToken();
+    } catch (_) {
+      // Firebase işlemi başarısız olsa bile çıkış devam etsin.
+    }
+
+    await _messageSubscription?.cancel();
+    _messageSubscription = null;
+
+    await _arizaSignalRService.stop();
     await _tokenStorageService.deleteAccessToken();
 
     if (!mounted) return;
@@ -101,14 +137,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _showResolveConfirmDialog(ArizaBildirimModel ariza) async {
+  Future<void> _showResolveConfirmDialog(
+    ArizaBildirimModel ariza,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Arıza çözüldü mü?'),
           content: Text(
-            '${ariza.arizaCesidiAdi.isEmpty ? 'Bu arıza' : ariza.arizaCesidiAdi} çözüldü olarak işaretlenecek.',
+            '${ariza.arizaCesidiAdi.isEmpty ? 'Bu arıza' : ariza.arizaCesidiAdi} '
+            'çözüldü olarak işaretlenecek.',
           ),
           actions: [
             TextButton(
@@ -153,7 +192,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const LoginScreen(
-            initialMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+            initialMessage:
+                'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
           ),
         ),
       );
@@ -162,7 +202,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Arıza çözüldü olarak işaretlenemedi.'),
+          content: Text(
+            'Arıza çözüldü olarak işaretlenemedi.',
+          ),
         ),
       );
     }
@@ -178,7 +220,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Bir arıza çözüldü. Liste güncellendi.'),
+              content: Text(
+                'Bir arıza çözüldü. Liste güncellendi.',
+              ),
             ),
           );
         },
@@ -189,13 +233,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Bir arıza iptal edildi. Liste güncellendi.'),
+              content: Text(
+                'Bir arıza iptal edildi. Liste güncellendi.',
+              ),
             ),
           );
         },
       );
     } catch (_) {
-      // SignalR bağlantısı kurulamazsa uygulama listeleme akışı bozulmasın.
+      // SignalR bağlantısı kurulamazsa listeleme akışı bozulmasın.
     }
   }
 
@@ -208,8 +254,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _loadScreenData();
     _startSignalR();
 
-    _messageSubscription = FirebaseMessaging.onMessage.listen((message) async {
-      await LocalNotificationService.showForegroundNotification(message);
+    _messageSubscription =
+        FirebaseMessaging.onMessage.listen((message) async {
+      await LocalNotificationService.showForegroundNotification(
+        message,
+      );
 
       if (!mounted) return;
 
@@ -243,8 +292,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         onRefresh: _loadScreenData,
         child: _isLoading
             ? const Center(
-          child: CircularProgressIndicator(),
-        )
+                child: CircularProgressIndicator(),
+              )
             : _buildBody(),
       ),
     );
@@ -297,9 +346,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           const ArizaEmptyState()
         else
           ..._aktifArizalar.map(
-                (ariza) => ArizaCard(
+            (ariza) => ArizaCard(
               ariza: ariza,
-              onResolvePressed: () => _showResolveConfirmDialog(ariza),
+              onResolvePressed: () =>
+                  _showResolveConfirmDialog(ariza),
             ),
           ),
       ],
