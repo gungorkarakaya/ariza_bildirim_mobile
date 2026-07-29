@@ -109,10 +109,14 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('FCM token alınamadı.');
       }
 
-      await _deviceTokenService.registerDeviceToken(
-        accessToken: accessToken,
-        fcmToken: fcmToken,
-      );
+     final deviceId =
+         await _tokenStorageService.getOrCreateDeviceId();
+
+     await _deviceTokenService.registerDeviceToken(
+       accessToken: accessToken,
+       fcmToken: fcmToken,
+       deviceId: deviceId,
+     );
 
       await _tokenStorageService.saveAccessToken(accessToken);
 

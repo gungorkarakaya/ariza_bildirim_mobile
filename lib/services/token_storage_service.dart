@@ -1,9 +1,12 @@
+import 'dart:math';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class TokenStorageService {
   static const String _accessTokenKey = 'access_token';
   static const String _rememberedUsernameKey = 'remembered_username';
   static const String _rememberedPasswordKey = 'remembered_password';
+  static const String _deviceIdKey = 'device_id';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -67,5 +70,31 @@ class TokenStorageService {
   Future<void> clearRememberedLogin() async {
     await clearRememberedUsername();
     await clearRememberedPassword();
+  }
+
+  Future<String> getOrCreateDeviceId() async {
+    final existingDeviceId = await _storage.read(
+      key: _deviceIdKey,
+    );
+
+    if (existingDeviceId != null && existingDeviceId.isNotEmpty) {
+      return existingDeviceId;
+    }
+
+    final random = Random.secure();
+
+    final deviceId = List<int>.generate(
+      32,
+      (_) => random.nextInt(256),
+    ).map(
+      (value) => value.toRadixString(16).padLeft(2, '0'),
+    ).join();
+
+    await _storage.write(
+      key: _deviceIdKey,
+      value: deviceId,
+    );
+
+    return deviceId;
   }
 }

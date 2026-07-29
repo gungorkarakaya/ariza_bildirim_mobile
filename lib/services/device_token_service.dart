@@ -8,6 +8,7 @@ class DeviceTokenService {
   Future<void> registerDeviceToken({
     required String accessToken,
     required String fcmToken,
+    required String deviceId,
   }) async {
     final response = await http.post(
       Uri.parse(ApiConstants.deviceTokenRegisterUrl),
@@ -16,6 +17,7 @@ class DeviceTokenService {
         'Authorization': 'Bearer $accessToken',
       },
       body: jsonEncode({
+        'deviceId': deviceId,
         'token': fcmToken,
         'platform': 'Android',
         'deviceName': 'Android Emulator',
@@ -26,7 +28,9 @@ class DeviceTokenService {
         response.statusCode != 201 &&
         response.statusCode != 204) {
       throw Exception(
-        'Device token kayıt başarısız. Status: ${response.statusCode}',
+        'Device token kayıt başarısız. '
+        'Status: ${response.statusCode} - '
+        'Cevap: ${response.body}',
       );
     }
   }
