@@ -14,10 +14,7 @@ import 'home_screen.dart';
 class LoginScreen extends StatefulWidget {
   final String? initialMessage;
 
-  const LoginScreen({
-    super.key,
-    this.initialMessage,
-  });
+  const LoginScreen({super.key, this.initialMessage});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -41,8 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
 
-    if (widget.initialMessage != null &&
-        widget.initialMessage!.isNotEmpty) {
+    if (widget.initialMessage != null && widget.initialMessage!.isNotEmpty) {
       _errorMessage = widget.initialMessage;
     }
 
@@ -50,23 +46,21 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loadRememberedLogin() async {
-    final rememberedUsername =
-        await _tokenStorageService.getRememberedUsername();
+    final rememberedUsername = await _tokenStorageService
+        .getRememberedUsername();
 
-    final rememberedPassword =
-        await _tokenStorageService.getRememberedPassword();
+    final rememberedPassword = await _tokenStorageService
+        .getRememberedPassword();
 
     if (!mounted) return;
 
     setState(() {
-      if (rememberedUsername != null &&
-          rememberedUsername.isNotEmpty) {
+      if (rememberedUsername != null && rememberedUsername.isNotEmpty) {
         _emailController.text = rememberedUsername;
         _rememberMe = true;
       }
 
-      if (rememberedPassword != null &&
-          rememberedPassword.isNotEmpty) {
+      if (rememberedPassword != null && rememberedPassword.isNotEmpty) {
         _passwordController.text = rememberedPassword;
         _rememberMe = true;
       }
@@ -109,14 +103,13 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('FCM token alınamadı.');
       }
 
-     final deviceId =
-         await _tokenStorageService.getOrCreateDeviceId();
+      final deviceId = await _tokenStorageService.getOrCreateDeviceId();
 
-     await _deviceTokenService.registerDeviceToken(
-       accessToken: accessToken,
-       fcmToken: fcmToken,
-       deviceId: deviceId,
-     );
+      await _deviceTokenService.registerDeviceToken(
+        accessToken: accessToken,
+        fcmToken: fcmToken,
+        deviceId: deviceId,
+      );
 
       await _tokenStorageService.saveAccessToken(accessToken);
 
@@ -129,11 +122,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const HomeScreen(),
-        ),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
     } catch (e) {
       if (!mounted) return;
 
@@ -185,10 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const Text(
                 'Beni Hatırla',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black87,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.black87),
               ),
             ],
           ),
@@ -206,9 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 420,
-              ),
+              constraints: const BoxConstraints(maxWidth: 420),
               child: Card(
                 elevation: 8,
                 shadowColor: Colors.black26,
@@ -246,8 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ? null
                               : () {
                                   setState(() {
-                                    _obscurePassword =
-                                        !_obscurePassword;
+                                    _obscurePassword = !_obscurePassword;
                                   });
                                 },
                           icon: Icon(
@@ -261,22 +246,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       _buildRememberMeCheckbox(),
                       const SizedBox(height: 8),
                       if (_errorMessage != null)
-                        LoginErrorBox(
-                          message: _errorMessage!,
-                        ),
-                      LoginButton(
-                        isLoading: _isLoading,
-                        onPressed: _login,
-                      ),
+                        LoginErrorBox(message: _errorMessage!),
+                      LoginButton(isLoading: _isLoading, onPressed: _login),
                       const SizedBox(height: 18),
                       const Align(
                         alignment: Alignment.centerRight,
                         child: Text(
                           'v1.0.0',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.black87,
-                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.black87),
                         ),
                       ),
                     ],
