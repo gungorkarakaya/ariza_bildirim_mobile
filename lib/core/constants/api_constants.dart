@@ -6,6 +6,9 @@ class ApiConstants {
   static const String deviceTokenRegisterUrl =
       '$baseUrl/api/mobile/device-token/register';
 
+  static const String deviceTokenUnregisterUrl =
+      '$baseUrl/api/mobile/device-token/unregister';
+
   static const String activeArizaBildirimListUrl =
       '$baseUrl/api/mobile/ariza-bildirim/active';
 
@@ -15,9 +18,7 @@ class ApiConstants {
   static String resolveArizaBildirimUrl(int id) =>
       '$baseUrl/api/mobile/ariza-bildirim/$id/resolve';
 
+  static const String appVersionUrl = '$baseUrl/api/mobile/app-version';
+
   static const String arizaHubUrl = '$baseUrl/arizaHub';
-
-  static const String deviceTokenUnregisterUrl =
-      '$baseUrl/api/mobile/device-token/unregister';
-
 }

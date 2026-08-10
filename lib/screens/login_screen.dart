@@ -1,6 +1,8 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
+import '../models/app_version_info.dart';
+import '../services/app_update_service.dart';
 import '../services/auth_service.dart';
 import '../services/device_token_service.dart';
 import '../services/fcm_service.dart';
@@ -25,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final FcmService _fcmService = FcmService();
   final DeviceTokenService _deviceTokenService = DeviceTokenService();
   final TokenStorageService _tokenStorageService = TokenStorageService();
+  final AppUpdateService _appUpdateService = AppUpdateService();
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -33,6 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
   bool _obscurePassword = true;
   bool _rememberMe = false;
+  String _appVersion = '';
 
   @override
   void initState() {
@@ -43,6 +47,25 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     _loadRememberedLogin();
+    _loadAppVersion();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdate();
+    });
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final version = await _appUpdateService.getCurrentVersion();
+
+      if (!mounted) return;
+
+      setState(() {
+        _appVersion = version;
+      });
+    } catch (_) {
+      // Sürüm bilgisi okunamazsa login ekranını etkileme.
+    }
   }
 
   Future<void> _loadRememberedLogin() async {
@@ -65,6 +88,93 @@ class _LoginScreenState extends State<LoginScreen> {
         _rememberMe = true;
       }
     });
+  }
+
+  Future<void> _checkForUpdate() async {
+    try {
+      final versionInfo = await _appUpdateService.getAppVersionInfo();
+
+      final currentVersion = await _appUpdateService.getCurrentVersion();
+
+      final hasUpdate = _appUpdateService.isNewerVersion(
+        currentVersion: currentVersion,
+        latestVersion: versionInfo.latestVersion,
+      );
+
+      if (!hasUpdate || !mounted) {
+        return;
+      }
+
+      await _showUpdateDialog(
+        versionInfo: versionInfo,
+        currentVersion: currentVersion,
+      );
+    } catch (_) {
+      // Güncelleme kontrolü başarısız olursa
+      // kullanıcının giriş yapmasını engellemiyoruz.
+    }
+  }
+
+  Future<void> _showUpdateDialog({
+    required AppVersionInfo versionInfo,
+    required String currentVersion,
+  }) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: !versionInfo.isMandatory,
+      builder: (dialogContext) {
+        return PopScope(
+          canPop: !versionInfo.isMandatory,
+          child: AlertDialog(
+            title: const Text('Yeni Sürüm Mevcut'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mevcut sürüm: $currentVersion\n'
+                  'Yeni sürüm: ${versionInfo.latestVersion}',
+                ),
+                if (versionInfo.releaseNotes.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(versionInfo.releaseNotes),
+                ],
+              ],
+            ),
+            actions: [
+              if (!versionInfo.isMandatory)
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text('Daha Sonra'),
+                ),
+              FilledButton(
+                onPressed: () async {
+                  if (!versionInfo.isMandatory) {
+                    Navigator.of(dialogContext).pop();
+                  }
+
+                  try {
+                    await _appUpdateService.downloadAndInstallApk(
+                      downloadUrl: versionInfo.downloadUrl,
+                      version: versionInfo.latestVersion,
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(_getReadableErrorMessage(e))),
+                    );
+                  }
+                },
+                child: const Text('Güncelle'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   String _getReadableErrorMessage(Object error) {
@@ -93,10 +203,8 @@ class _LoginScreenState extends State<LoginScreen> {
         password: password,
       );
 
-      // Logout sırasında kapatılan FCM otomatik başlatmayı yeniden aç.
       await FirebaseMessaging.instance.setAutoInitEnabled(true);
 
-      // Logout sırasında silinen token yerine yeni/geçerli token alınır.
       final fcmToken = await _fcmService.getFcmToken();
 
       if (fcmToken == null || fcmToken.isEmpty) {
@@ -249,11 +357,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         LoginErrorBox(message: _errorMessage!),
                       LoginButton(isLoading: _isLoading, onPressed: _login),
                       const SizedBox(height: 18),
-                      const Align(
+                      Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          'v1.0.0',
-                          style: TextStyle(fontSize: 12, color: Colors.black87),
+                          _appVersion.isEmpty ? '' : 'v$_appVersion',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
                     ],
